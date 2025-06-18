@@ -12,6 +12,7 @@ import torch.nn as nn
 import torchvision
 import torchvision.transforms.v2 as T
 import torchvision.transforms.v2.functional as F
+from torchvision.transforms.v2 import InterpolationMode
 
 from ...core import register
 from .._misc import (
@@ -34,7 +35,7 @@ Resize = register()(T.Resize)
 # ToImageTensor = register()(T.ToImageTensor)
 # ConvertDtype = register()(T.ConvertDtype)
 # PILToTensor = register()(T.PILToTensor)
-SanitizeBoundingBoxes = register(name="SanitizeBoundingBoxes")(SanitizeBoundingBoxes)
+SanitizeBoundingBoxes = register(name="SanitizeBoundingBoxes")(T.SanitizeBoundingBoxes)
 RandomCrop = register()(T.RandomCrop)
 Normalize = register()(T.Normalize)
 
@@ -159,3 +160,46 @@ class ConvertPILImage(T.Transform):
         inpt = Image(inpt)
 
         return inpt
+
+
+@register()
+class RandomDiscreteRotation(T.Transform):
+    """
+    Randomly rotate image & target by one of [-90, -60, -30, 0, 30, 60, 90] degrees.
+    """
+    _transformed_types = (PIL.Image.Image, Image, Mask, BoundingBoxes)
+
+    def __init__(
+        self,
+        expand: bool = True,
+        fill: int = 0,
+        interpolation: str | InterpolationMode = "nearest",
+    ) -> None:
+        super().__init__()
+        self.degrees = [-90, -60, -30, 0, 30, 60, 90]
+        self.expand = expand
+        self.fill = fill
+        # convert string to InterpolationMode if needed
+        if isinstance(interpolation, str):
+            self.interpolation = InterpolationMode[interpolation.upper()]
+        else:
+            self.interpolation = interpolation
+
+    def forward(self, image, target=None):
+        import random
+
+        # allow being called with a single (img, tgt) tuple
+        if target is None and isinstance(image, (tuple, list)) and len(image) == 2:
+            image, target = image
+
+        angle = float(random.choice(self.degrees))
+        rot = T.RandomRotation(
+            degrees=(angle, angle),
+            interpolation=self.interpolation,
+            expand=self.expand,
+            fill=self.fill,
+        )
+        # rotate image (and target if present)
+        if target is None:
+            return rot(image)
+        return rot(image, target)

@@ -20,7 +20,7 @@ from ...misc import dist_utils
 
 __all__ = [
     "CocoEvaluator",
-]
+] 
 
 
 @register()
@@ -88,8 +88,18 @@ class CocoEvaluator(object):
 
     def summarize(self):
         for iou_type, coco_eval in self.coco_eval.items():
-            print("IoU metric: {}".format(iou_type))
+            print(f"IoU metric: {iou_type}")
             coco_eval.summarize()
+            # compute F1 = 2 * (AP * AR) / (AP + AR)
+            # stats[0] = AP@[.5:.95], stats[8] = AR@[.5:.95]@100
+            stats = getattr(coco_eval, "stats", None)
+            if stats is not None and len(stats) > 8:
+                ap = float(stats[0])
+                ar = float(stats[8])
+                f1 = 2 * ap * ar / (ap + ar + 1e-10)
+                print(f"F1 score (AP vs AR@100): {f1:.3f}")
+            else:
+                print("F1 score: N/A")
 
     def prepare(self, predictions, iou_type):
         if iou_type == "bbox":

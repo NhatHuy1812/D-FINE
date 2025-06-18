@@ -379,7 +379,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --master_port=7777 --nproc_per_node=4 trai
 <!-- <summary>3. Tuning </summary> -->
 4. Tuning
 ```shell
-CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --master_port=7777 --nproc_per_node=4 train.py -c configs/dfine/dfine_hgnetv2_${model}_coco.yml --use-amp --seed=0 -t model.pth
+CUDA_VISIBLE_DEVICES=0,1 torchrun --master_port=7777 --nproc_per_node=2 train.py -c /home/huy/iccv/D-FINE/configs/dfine/custom/objects365/dfine_hgnetv2_x_obj2custom.yml --use-amp --seed=0 --resume output/dfine_hgnetv2_x_obj2custom_night_labeled/last.pth
 ```
 </details>
 

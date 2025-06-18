@@ -16,6 +16,7 @@ from ._transforms import (
     RandomZoomOut,
     Resize,
     SanitizeBoundingBoxes,
+    RandomDiscreteRotation   # ← add this
 )
 from .container import Compose
 from .mosaic import Mosaic
