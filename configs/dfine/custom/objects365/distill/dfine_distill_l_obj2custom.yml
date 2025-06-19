@@ -1,0 +1,9 @@
+_base_: ../dfine_hgnetv2_l_obj2custom.yml
+distill_from: ../dfine_hgnetv2_x_obj2custom.yml
+teacher_ckpt: ../../../../../output/dfine_hgnetv2_x_obj2custom_day/best_stg1.pth
+kd_weights:
+  cls_w: 2.0
+  box_w: 4.0
+  feat_w: 1.0
+  aux_w: 1.0
+  T: 2.0

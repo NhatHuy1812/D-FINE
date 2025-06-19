@@ -43,9 +43,21 @@ def save_samples(samples: torch.Tensor, targets: List[Dict], output_dir: str, sp
         sample_visualization = sample.clone().cpu()
         target_boxes = target["boxes"].clone().cpu()
         target_labels = target["labels"].clone().cpu()
-        target_image_id = target["image_id"].item()
-        target_image_path = target["image_path"]
-        target_image_path_stem = Path(target_image_path).stem
+        # ensure image_id is a scalar int if tensor has multiple elements
+        img_id_tensor = target["image_id"]
+        if img_id_tensor.numel() > 1:
+            target_image_id = img_id_tensor[0].item()
+        else:
+            target_image_id = img_id_tensor.item()
+        # handle image_path possibly being missing or a list (e.g. after Mosaic)
+        target_image_path = target.get("image_path", "")
+        if isinstance(target_image_path, (list, tuple)):
+            target_image_path = target_image_path[0] if len(target_image_path) > 0 else ""
+        # derive stem, fallback to ID if path is invalid
+        try:
+            target_image_path_stem = Path(target_image_path).stem
+        except Exception:
+            target_image_path_stem = str(target_image_id)
 
         sample_visualization = to_pil_image(sample_visualization)
         sample_visualization_w, sample_visualization_h = sample_visualization.size
@@ -97,7 +109,14 @@ def save_samples(samples: torch.Tensor, targets: List[Dict], output_dir: str, sp
             draw.text((x1 + padding, y1 - text_height - padding), label_text,
                      fill=LABEL_TEXT_COLOR, font=font)
 
-        save_path = Path(output_dir) / f"{split}_samples" / f"{target_image_id}_{target_image_path_stem}.webp"
+        # derive an output extension from the original path or default
+        orig_ext = Path(target_image_path).suffix if target_image_path else ""
+        orig_ext = orig_ext.lower()
+        if orig_ext not in [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"]:
+            orig_ext = ".png"
+        fname = f"{target_image_id}_{target_image_path_stem}{orig_ext}"
+        save_path = Path(output_dir) / f"{split}_samples" / fname
+
         sample_visualization.save(save_path)
 
 def show_sample(sample):

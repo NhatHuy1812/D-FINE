@@ -76,7 +76,7 @@ def main(args):
         bxs  = boxes[0].cpu().numpy()
         scrs = scores[0].cpu().numpy()
         for l, b, s in zip(lbls, bxs, scrs):
-            if s < 0.1:                         # ← only draw if > 0.65
+            if s < 0.6:                         # ← only draw if > 0.65
                 continue
             x1,y1,x2,y2 = b
             # draw box + label

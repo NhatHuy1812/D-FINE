@@ -3,38 +3,40 @@ train_dataloader:
   dataset:
     transforms:
       ops:
+        - {type: Mosaic, output_size: 640, max_size: 1280, rotation_range: 10, translation_range: [0.5, 0.5], scaling_range: [1.2, 2.0],
+           probability: 0.8, fill_value: 0, use_cache: False, max_cached_images: 50, random_pop: True}
         - {type: RandomPhotometricDistort, p: 0.5}
-        - {type: RandomZoomOut, fill: 0}
-        - {type: RandomIoUCrop, p: 0.5}
+        #- {type: RandomZoomOut, fill: 0}
+        - {type: RandomIoUCrop, p: 0.8}
         - {type: SanitizeBoundingBoxes, min_size: 1}
         - {type: RandomHorizontalFlip}
         #- {type: RandomDiscreteRotation} 
-        - {type: Resize, size: [1280, 1280], }
+        - {type: Resize, size: [640, 640], }
         - {type: SanitizeBoundingBoxes, min_size: 1}
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
         - {type: ConvertBoxes, fmt: 'cxcywh', normalize: True}
       policy:
         name: stop_epoch
         epoch: 72 # epoch in [71, ~) stop `ops`
-        ops: ['RandomPhotometricDistort', 'RandomZoomOut', 'RandomIoUCrop']
+        ops: ['RandomPhotometricDistort', 'Mosaic', 'RandomIoUCrop']
 
   collate_fn:
     type: BatchImageCollateFunction
-    base_size: 1280
+    base_size: 640
     base_size_repeat: 3
     stop_epoch: 72 # epoch in [72, ~) stop `multiscales`
 
   shuffle: True
-  total_batch_size: 4 # total batch size equals to 32 (4 * 8)
-  num_workers: 2
+  total_batch_size: 12 # total batch size equals to 32 (4 * 8)
+  num_workers: 4
 
 
 val_dataloader:
   dataset:
     transforms:
       ops:
-        - {type: Resize, size: [1280, 1280], }
+        - {type: Resize, size: [640, 640], }
         - {type: ConvertPILImage, dtype: 'float32', scale: True}
   shuffle: False
-  total_batch_size: 8
-  num_workers: 2
+  total_batch_size: 12
+  num_workers: 4
