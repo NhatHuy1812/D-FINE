@@ -12,7 +12,7 @@ train_dataloader:
   dataset:
     type: CocoDetection
     img_folder: ../OD_dataset/all/images
-    ann_file: ../OD_dataset/fisheye_day_train+test_vis_loaf20k_val.json
+    ann_file: ../OD_dataset/fisheye_day_train+test_vis_loaf20k_val_vc2020.json
     return_masks: False
     transforms:
       type: Compose
@@ -29,7 +29,7 @@ val_dataloader:
   dataset:
     type: CocoDetection
     img_folder: ../OD_dataset/all/images
-    ann_file: ../OD_dataset/fisheye_day_test_val.json
+    ann_file: ../OD_dataset/fisheye_day_val.json
     return_masks: False
     transforms:
       type: Compose
