@@ -2,7 +2,9 @@ import os, glob, json, argparse
 from PIL import Image, ImageDraw, ImageFont   # ← add ImageDraw, ImageFont
 import torch, torch.nn as nn
 import torchvision.transforms as T
-import time                                    # <<<< added
+import time
+import cv2                                    # ← use OpenCV for imread
+from sklearn.metrics import f1_score          # ← to compute F1‐score
 
 # add project root
 import sys
@@ -50,25 +52,32 @@ def main(args):
     tf        = T.Compose([T.Resize(args.resize), T.ToTensor()])
     results   = []
     files     = sorted(glob.glob(os.path.join(args.input_dir, "*")))
-    latencies = []
+    sum_time  = 0.0                            # ← accumulator for per‐image inference time
+    max_fps   = 25                            # ← upper bound for FPS normalization
 
     # make output‐folder for drawn images
     draw_dir = os.path.join(args.input_dir, "../drawn_finetuned")
     os.makedirs(draw_dir, exist_ok=True)
 
     for idx, img_path in enumerate(files):
-        img = Image.open(img_path).convert("RGB")
-        draw = ImageDraw.Draw(img)                # ← prepare to draw
+        # LOAD image via OpenCV
+        bgr  = cv2.imread(img_path)
+        rgb  = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        img  = Image.fromarray(rgb)
+        draw = ImageDraw.Draw(img)
+
         w, h = img.size
 
         inp   = tf(img).unsqueeze(0).to(device)
         sizes = torch.tensor([[w,h]], device=device)
 
-        t0 = time.time()                      # <<<< added
+        # measure only inference + post‐process
+        t0 = time.time()
+        
         with torch.no_grad():
             labels, boxes, scores = model(inp, sizes)
-        t1 = time.time()                      # <<<< added
-        latencies.append(t1 - t0)             # <<<< added
+        t1 = time.time()
+        sum_time += (t1 - t0)
 
         img_id = get_image_Id(os.path.basename(img_path))
 
@@ -94,16 +103,24 @@ def main(args):
         out_path = os.path.join(draw_dir, os.path.basename(img_path))
         img.save(out_path)
 
+    # write COCO results
     with open(args.output, "w") as f:
         json.dump(results, f)
 
-    total_time = sum(latencies)               # <<<< added
-    n = len(latencies)                        # <<<< added
-    fps = n / total_time if total_time>0 else 0  # <<<< added
-    avg_lat = total_time / n if n>0 else 0      # <<<< added
+    n_images = len(files)
+    fps      = n_images / sum_time if sum_time>0 else 0
+    norm_fps = min(fps, max_fps) / max_fps
+
+    # Compute F1-score – implement loading of GT vs preds into y_true, y_pred
+    # y_true, y_pred = load_gt_and_preds(...)
+    #f1       = f1_score(y_true, y_pred)
+
+    # harmonic mean of norm_fps and f1
+    #metric   = (2 * norm_fps * f1) / (norm_fps + f1) if (norm_fps + f1)>0 else 0
 
     print(f"Saved {len(results)} detections to {args.output}")
-    print(f"Processed {n} images in {total_time:.3f}s — FPS: {fps:.2f}, avg latency: {avg_lat:.3f}s")  # <<<< added
+    print(f"FPS: {fps:.2f}, norm_FPS: {norm_fps:.2f}")
+    #print(f"F1-score: {f1:.3f}, Combined Metric: {metric:.3f}")
 
 if __name__=="__main__":
     p = argparse.ArgumentParser()

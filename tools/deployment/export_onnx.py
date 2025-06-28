@@ -55,8 +55,11 @@ def main(
 
     model = Model()
 
-    data = torch.rand(32, 3, 1280, 1280)
-    size = torch.tensor([[1280, 1280]])
+    # both inputs must match model.dtype (float16)
+    # create FP16 data on CUDA so it matches model
+    data = torch.rand(16, 3, 1280, 1280)
+    # orig_target_sizes can stay int64 on CUDA
+    size = torch.tensor([[1280, 1280]], dtype=torch.int64)
     _ = model(data, size)
 
     dynamic_axes = {

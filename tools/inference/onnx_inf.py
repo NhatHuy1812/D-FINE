@@ -24,7 +24,7 @@ def resize_with_aspect_ratio(image, size, interpolation=Image.BILINEAR):
     return new_image, ratio, (size - new_width) // 2, (size - new_height) // 2
 
 
-def draw(images, labels, boxes, scores, ratios, paddings, thrh=0.4):
+def draw(images, labels, boxes, scores, ratios, paddings, thrh=0.6):
     result_images = []
     for i, im in enumerate(images):
         draw = ImageDraw.Draw(im)
@@ -53,7 +53,7 @@ def draw(images, labels, boxes, scores, ratios, paddings, thrh=0.4):
 
 def process_image(sess, im_pil):
     # Resize image while preserving aspect ratio
-    resized_im_pil, ratio, pad_w, pad_h = resize_with_aspect_ratio(im_pil, 640)
+    resized_im_pil, ratio, pad_w, pad_h = resize_with_aspect_ratio(im_pil, 1280)
     orig_size = torch.tensor([[resized_im_pil.size[1], resized_im_pil.size[0]]])
 
     transforms = T.Compose(
@@ -98,7 +98,7 @@ def process_video(sess, video_path):
         frame_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
         # Resize frame while preserving aspect ratio
-        resized_frame_pil, ratio, pad_w, pad_h = resize_with_aspect_ratio(frame_pil, 640)
+        resized_frame_pil, ratio, pad_w, pad_h = resize_with_aspect_ratio(frame_pil, 1280)
         orig_size = torch.tensor([[resized_frame_pil.size[1], resized_frame_pil.size[0]]])
 
         transforms = T.Compose(

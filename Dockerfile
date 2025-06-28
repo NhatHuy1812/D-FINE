@@ -13,8 +13,8 @@ RUN conda run -n dfine python -m pip install --upgrade pip setuptools && \
     conda run -n dfine conda install -y -c conda-forge numpy && \
     conda run -n dfine pip install --no-cache-dir \
       jupyterlab pycocotools PyYAML tensorboard scipy \
-      faster-coco-eval calflops transformers loguru opencv-python nvitop onnx onnxsim matplotlib && \
-    conda run -n dfine pip install --default-timeout=10000 torch torchvision
+      faster-coco-eval calflops transformers loguru opencv-python nvitop onnx onnxsim matplotlib tensorrt==8.6.1 && \
+    conda run -n dfine pip install --default-timeout=10000 torch torchvision 
 
 # add TensorRT bin to PATH at build-time (no need to source later)
 ENV PATH=/usr/src/tensorrt/bin:$PATH

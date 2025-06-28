@@ -13,6 +13,8 @@ import numpy as np
 import tensorrt as trt
 import torch
 import torchvision.transforms as T
+import time
+import argparse
 from PIL import Image, ImageDraw
 
 
@@ -121,7 +123,7 @@ class TRTInference(object):
             torch.cuda.synchronize()
 
 
-def draw(images, labels, boxes, scores, thrh=0.4):
+def draw(images, labels, boxes, scores, thrh=0.2):
     for i, im in enumerate(images):
         draw = ImageDraw.Draw(im)
         scr = scores[i]
@@ -144,10 +146,10 @@ def process_image(m, file_path, device):
     im_pil = Image.open(file_path).convert("RGB")
     w, h = im_pil.size
     orig_size = torch.tensor([w, h])[None].to(device)
-
+    
     transforms = T.Compose(
         [
-            T.Resize((640, 640)),
+            T.Resize((1280, 1280)),
             T.ToTensor(),
         ]
     )
@@ -157,11 +159,26 @@ def process_image(m, file_path, device):
         "images": im_data.to(device),
         "orig_target_sizes": orig_size.to(device),
     }
+    # Warm up (optional, to stabilize GPU timing)
+    torch.cuda.synchronize()
+    _ = m(blob)
 
+    # Measure latency
+    torch.cuda.synchronize()
+    t0 = time.time()
     output = m(blob)
-    result_images = draw([im_pil], output["labels"], output["boxes"], output["scores"])
+    torch.cuda.synchronize()
+    t1 = time.time()
+
+    # Print outputs and latency
+    print(output)
+    result_images = draw([im_pil],
+                         output["labels"],
+                         output["boxes"],
+                         output["scores"])
     result_images[0].save("trt_result.jpg")
-    print("Image processing complete. Result saved as 'result.jpg'.")
+    print(f"Image processing complete. Saved as 'trt_result.jpg'. "
+          f"Latency: {1000/((t1 - t0) * 1000):.2f} fps")
 
 
 def process_video(m, file_path, device):
@@ -224,7 +241,6 @@ def process_video(m, file_path, device):
 
 
 if __name__ == "__main__":
-    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-trt", "--trt", type=str, required=True)

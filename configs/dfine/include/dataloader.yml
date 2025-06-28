@@ -4,7 +4,7 @@ train_dataloader:
     transforms:
       ops:
         - {type: Mosaic, output_size: 768, max_size: 1920, rotation_range: 10, translation_range: [0.5, 0.5], scaling_range: [1.2, 2.0],
-           probability: 1, fill_value: 0, use_cache: False, max_cached_images: 50, random_pop: True}
+           probability: 0.8, fill_value: 0, use_cache: False, max_cached_images: 50, random_pop: True}
         - {type: RandomPhotometricDistort, p: 0.5}
         - {type: RandomZoomOut, fill: 0}
         - {type: RandomIoUCrop, p: 0.8}
